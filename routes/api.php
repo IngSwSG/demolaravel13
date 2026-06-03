@@ -8,3 +8,5 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::apiResource('tasks', \App\Http\Controllers\TaskController::class);
+
+Route::put('/tasks/{task}/mark-as-completed', [\App\Http\Controllers\TaskController::class, 'markAsCompleted']);
