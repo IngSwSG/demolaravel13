@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Task;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,8 +19,9 @@ class TaskFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'user_id' => \App\Models\User::factory(),
+            'name' => fake()->sentence(3),
+            'completed' => false,
+            'user_id' => User::factory(),
         ];
     }
 }
