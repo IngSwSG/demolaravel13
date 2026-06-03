@@ -9,15 +9,15 @@ class TaskController extends Controller
 {
     public function index()
     {
-       $tasks = Task::all();
+        $tasks = Task::all();
 
-       return $tasks; 
+        return $tasks;
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'    => 'required|string|max:255',
             'user_id' => 'required|exists:users,id',
         ]);
 
@@ -34,14 +34,13 @@ class TaskController extends Controller
     public function update(Request $request, Task $task)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'    => 'required|string|max:255',
             'user_id' => 'required|exists:users,id',
         ]);
 
         $task->update($data);
 
         return $task;
-    
     }
 
     public function destroy(Task $task)
@@ -49,5 +48,24 @@ class TaskController extends Controller
         $task->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function complete(Task $task)
+    {
+        if ($task->completed_at) {
+            $task->update(['completed_at' => null]);
+
+            return response()->json([
+                'message' => 'Task marked as incomplete.',
+                'task'    => $task,
+            ]);
+        }
+
+        $task->update(['completed_at' => now()]);
+
+        return response()->json([
+            'message' => 'Task marked as completed.',
+            'task'    => $task,
+        ]);
     }
 }

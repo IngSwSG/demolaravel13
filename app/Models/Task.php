@@ -10,5 +10,8 @@ class Task extends Model
     /** @use HasFactory<\Database\Factories\TaskFactory> */
     use HasFactory;
 
-    protected $fillable = ['name', 'user_id'];
-}
+    protected $fillable = ['name', 'user_id', 'completed_at'];
+protected $casts = [
+    'completed_at' => 'datetime',
+];
+    }

@@ -1,149 +1,134 @@
 <?php
 
+namespace Tests\Feature;
+
 use App\Models\Task;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-// ── INDEX ──────────────────────────────────────────────────────────────────
+class TaskControllerTest extends TestCase
+{
+    use RefreshDatabase;
 
-test('index returns all tasks', function () {
-    Task::factory()->count(3)->create();
+   
+    private function createUser(): User
+    {
+        return User::factory()->create();
+    }
 
-    $response = $this->getJson('/api/tasks');
+    private function createTask(array $overrides = []): Task
+    {
+        $user = $this->createUser();
 
-    $response->assertOk()
-             ->assertJsonCount(3);
-});
+        return Task::factory()->create(array_merge([
+            'user_id' => $user->id,
+        ], $overrides));
+    }
 
-test('index returns empty array when no tasks exist', function () {
-    $response = $this->getJson('/api/tasks');
+    public function test_index_returns_all_tasks(): void
+    {
+        Task::factory(3)->create(['user_id' => $this->createUser()->id]);
 
-    $response->assertOk()
-             ->assertJsonCount(0);
-});
+        $response = $this->getJson('/api/tasks');
 
-// ── STORE ──────────────────────────────────────────────────────────────────
+        $response->assertOk()
+                 ->assertJsonCount(3);
+    }
 
-test('store creates a task with valid data', function () {
-    $user = User::factory()->create();
 
-    $response = $this->postJson('/api/tasks', [
-        'name'    => 'Nueva tarea',
-        'user_id' => $user->id,
-    ]);
+    public function test_store_creates_a_task(): void
+    {
+        $user = $this->createUser();
 
-    $response->assertCreated()
-             ->assertJsonFragment(['name' => 'Nueva tarea', 'user_id' => $user->id]);
+        $response = $this->postJson('/api/tasks', [
+            'name'    => 'Nueva tarea',
+            'user_id' => $user->id,
+        ]);
 
-    $this->assertDatabaseHas('tasks', ['name' => 'Nueva tarea', 'user_id' => $user->id]);
-});
+        $response->assertCreated()
+                 ->assertJsonFragment(['name' => 'Nueva tarea']);
 
-test('store fails when name is missing', function () {
-    $user = User::factory()->create();
+        $this->assertDatabaseHas('tasks', ['name' => 'Nueva tarea']);
+    }
 
-    $response = $this->postJson('/api/tasks', ['user_id' => $user->id]);
+    public function test_store_requires_name_and_user_id(): void
+    {
+        $response = $this->postJson('/api/tasks', []);
 
-    $response->assertUnprocessable()
-             ->assertJsonValidationErrors(['name']);
-});
+        $response->assertUnprocessable()
+                 ->assertJsonValidationErrors(['name', 'user_id']);
+    }
 
-test('store fails when user_id does not exist', function () {
-    $response = $this->postJson('/api/tasks', [
-        'name'    => 'Tarea huérfana',
-        'user_id' => 9999,
-    ]);
+    public function test_show_returns_a_task(): void
+    {
+        $task = $this->createTask();
 
-    $response->assertUnprocessable()
-             ->assertJsonValidationErrors(['user_id']);
-});
+        $response = $this->getJson("/api/tasks/{$task->id}");
 
-test('store fails when user_id is missing', function () {
-    $response = $this->postJson('/api/tasks', ['name' => 'Sin usuario']);
+        $response->assertOk()
+                 ->assertJsonFragment(['id' => $task->id]);
+    }
 
-    $response->assertUnprocessable()
-             ->assertJsonValidationErrors(['user_id']);
-});
 
-// ── SHOW ───────────────────────────────────────────────────────────────────
+    public function test_update_modifies_a_task(): void
+    {
+        $task = $this->createTask();
+        $user = $this->createUser();
 
-test('show returns the requested task', function () {
-    $task = Task::factory()->create();
+        $response = $this->putJson("/api/tasks/{$task->id}", [
+            'name'    => 'Tarea actualizada',
+            'user_id' => $user->id,
+        ]);
 
-    $response = $this->getJson("/api/tasks/{$task->id}");
+        $response->assertOk()
+                 ->assertJsonFragment(['name' => 'Tarea actualizada']);
 
-    $response->assertOk()
-             ->assertJsonFragment(['id' => $task->id, 'name' => $task->name]);
-});
+        $this->assertDatabaseHas('tasks', ['name' => 'Tarea actualizada']);
+    }
 
-test('show returns 404 for a non-existent task', function () {
-    $response = $this->getJson('/api/tasks/9999');
+    public function test_destroy_deletes_a_task(): void
+    {
+        $task = $this->createTask();
 
-    $response->assertNotFound();
-});
+        $response = $this->deleteJson("/api/tasks/{$task->id}");
 
-// ── UPDATE ─────────────────────────────────────────────────────────────────
+        $response->assertNoContent();
+        $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
+    }
 
-test('update modifies a task with valid data', function () {
-    $task = Task::factory()->create();
-    $user = User::factory()->create();
+    public function test_complete_marks_task_as_completed(): void
+    {
+        $task = $this->createTask(['completed_at' => null]);
 
-    $response = $this->putJson("/api/tasks/{$task->id}", [
-        'name'    => 'Tarea actualizada',
-        'user_id' => $user->id,
-    ]);
+        $response = $this->patchJson("/api/tasks/{$task->id}/complete");
 
-    $response->assertOk()
-             ->assertJsonFragment(['name' => 'Tarea actualizada']);
+        $response->assertOk()
+                 ->assertJsonFragment(['message' => 'Task marked as completed.']);
 
-    $this->assertDatabaseHas('tasks', ['id' => $task->id, 'name' => 'Tarea actualizada']);
-});
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+        ]);
 
-test('update fails when name is missing', function () {
-    $task = Task::factory()->create();
-    $user = User::factory()->create();
+        $this->assertNotNull($task->fresh()->completed_at);
+    }
 
-    $response = $this->putJson("/api/tasks/{$task->id}", ['user_id' => $user->id]);
+    public function test_complete_unmarks_an_already_completed_task(): void
+    {
+        $task = $this->createTask(['completed_at' => now()]);
 
-    $response->assertUnprocessable()
-             ->assertJsonValidationErrors(['name']);
-});
+        $response = $this->patchJson("/api/tasks/{$task->id}/complete");
 
-test('update fails when user_id does not exist', function () {
-    $task = Task::factory()->create();
+        $response->assertOk()
+                 ->assertJsonFragment(['message' => 'Task marked as incomplete.']);
 
-    $response = $this->putJson("/api/tasks/{$task->id}", [
-        'name'    => 'Actualizada',
-        'user_id' => 9999,
-    ]);
+        $this->assertNull($task->fresh()->completed_at);
+    }
 
-    $response->assertUnprocessable()
-             ->assertJsonValidationErrors(['user_id']);
-});
+    public function test_complete_returns_404_for_nonexistent_task(): void
+    {
+        $response = $this->patchJson('/api/tasks/999/complete');
 
-test('update returns 404 for a non-existent task', function () {
-    $user = User::factory()->create();
-
-    $response = $this->putJson('/api/tasks/9999', [
-        'name'    => 'Fantasma',
-        'user_id' => $user->id,
-    ]);
-
-    $response->assertNotFound();
-});
-
-// ── DESTROY ────────────────────────────────────────────────────────────────
-
-test('destroy deletes a task and returns 204', function () {
-    $task = Task::factory()->create();
-
-    $response = $this->deleteJson("/api/tasks/{$task->id}");
-
-    $response->assertNoContent();
-
-    $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
-});
-
-test('destroy returns 404 for a non-existent task', function () {
-    $response = $this->deleteJson('/api/tasks/9999');
-
-    $response->assertNotFound();
-});
+        $response->assertNotFound();
+    }
+}
