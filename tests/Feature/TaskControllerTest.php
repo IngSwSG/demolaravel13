@@ -83,4 +83,23 @@ class TaskControllerTest extends TestCase
             'id' => $task->id,
         ]);
     }
+
+    public function test_can_complete_task()
+{
+    $user = User::factory()->create();
+
+    $task = Task::factory()->create([
+        'user_id' => $user->id,
+        'completed' => false,
+    ]);
+
+    $response = $this->patchJson("/api/tasks/{$task->id}/complete");
+
+    $response->assertStatus(200);
+
+    $this->assertDatabaseHas('tasks', [
+        'id' => $task->id,
+        'completed' => true,
+    ]);
+}
 }

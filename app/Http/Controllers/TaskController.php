@@ -51,4 +51,12 @@ class TaskController extends Controller
         return response()->json(null, 204);
     }
     
+      public function complete(Task $task)
+    {
+        $task->update([
+            'completed' => true
+        ]);
+
+        return response()->json($task);
+    }
 }
