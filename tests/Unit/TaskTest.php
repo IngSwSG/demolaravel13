@@ -61,4 +61,24 @@ class TaskTest extends TestCase
             'id' => $task->id
         ]);
     }
+
+    public function test_complete_marks_task_as_completed()
+{
+    $user = User::factory()->create();
+
+    $task = Task::factory()->create([
+        'user_id' => $user->id,
+    ]);
+
+    $controller = new TaskController();
+
+    $result = $controller->complete($task);
+
+    $this->assertTrue($result->completed);
+
+    $this->assertDatabaseHas('tasks', [
+        'id' => $task->id,
+        'completed' => true,
+    ]);
+}
 }
