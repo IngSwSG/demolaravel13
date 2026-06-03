@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('tasks', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            // Incluimos la columna de tu funcionalidad directamente aquí
+            $table->boolean('is_completed')->default(false); 
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
