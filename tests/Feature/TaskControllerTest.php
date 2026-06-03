@@ -60,3 +60,14 @@ test('destroy deletes a task', function () {
 
     $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
 });
+
+test('mark task as completed', function () {
+    $task = Task::factory()->create(['completed' => false]);
+
+    $response = $this->patchJson("/api/tasks/{$task->id}/complete");
+
+    $response->assertStatus(200)
+             ->assertJsonFragment(['id' => $task->id, 'completed' => true]);
+
+    $this->assertDatabaseHas('tasks', ['id' => $task->id, 'completed' => true]);
+});

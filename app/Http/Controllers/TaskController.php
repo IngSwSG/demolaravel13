@@ -44,6 +44,13 @@ class TaskController extends Controller
     
     }
 
+    public function complete(Task $task)
+    {
+        $task->update(['completed' => true]);
+
+        return $task;
+    }
+
     public function destroy(Task $task)
     {
         $task->delete();
