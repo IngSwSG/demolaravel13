@@ -50,4 +50,24 @@ class TaskController extends Controller
 
         return response()->json(null, 204);
     }
+
+    public function complete(Task $task)
+    {
+        if ($task->completed) {
+            return response()->json([
+                'message' => 'La tarea ya estaba marcada como completada.',
+                'task'    => $task,
+            ], 200);
+        }
+ 
+        $task->update([
+            'completed'    => true,
+            'completed_at' => now(),
+        ]);
+ 
+        return response()->json([
+            'message' => 'Tarea marcada como completada.',
+            'task'    => $task,
+        ], 200);
+    }
 }
