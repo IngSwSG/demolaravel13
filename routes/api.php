@@ -7,4 +7,6 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+Route::patch('tasks/{task}/complete', [\App\Http\Controllers\TaskController::class, 'complete'])
+    ->name('tasks.complete');
 Route::apiResource('tasks', \App\Http\Controllers\TaskController::class);

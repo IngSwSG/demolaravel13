@@ -19,6 +19,7 @@ class TaskFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            'completed' => false,
             'user_id' => \App\Models\User::factory(),
         ];
     }

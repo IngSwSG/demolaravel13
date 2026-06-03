@@ -77,3 +77,20 @@ it('elimina una tarea (destroy)', function () {
     $response->assertNoContent();
     $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
 });
+
+it('marca una tarea como completada (complete)', function () {
+    $task = Task::factory()->create(['completed' => false]);
+
+    $response = $this->patchJson("/api/tasks/{$task->id}/complete");
+
+    $response->assertOk()
+        ->assertJsonFragment([
+            'id' => $task->id,
+            'completed' => true,
+        ]);
+
+    $this->assertDatabaseHas('tasks', [
+        'id' => $task->id,
+        'completed' => true,
+    ]);
+});
