@@ -23,7 +23,7 @@ class TaskController extends Controller
 
         $task = Task::create($data);
 
-        return $task;
+        return response()->json($task, 201);
     }
 
     public function show(Task $task)
@@ -49,5 +49,12 @@ class TaskController extends Controller
         $task->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function complete(Task $task)
+    {
+        $task->update(['completed' => true]);
+
+        return response()->json($task);
     }
 }
