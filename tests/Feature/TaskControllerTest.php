@@ -135,3 +135,34 @@ describe('TaskController@destroy', function () {
         $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
     });
 });
+
+describe('TaskController@complete', function () {
+    it('marks a task as completed', function () {
+        $task = Task::factory()->create(['completed' => false]);
+
+        $response = $this->postJson("/api/tasks/{$task->id}/complete");
+
+        $response->assertOk()
+            ->assertJsonFragment(['completed' => true]);
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'completed' => true,
+        ]);
+    });
+
+    it('keeps a task completed when completed again', function () {
+        $task = Task::factory()->create(['completed' => true]);
+
+        $response = $this->postJson("/api/tasks/{$task->id}/complete");
+
+        $response->assertOk()
+            ->assertJsonFragment(['completed' => true]);
+    });
+
+    it('returns 404 when completing a task that does not exist', function () {
+        $response = $this->postJson('/api/tasks/999/complete');
+
+        $response->assertNotFound();
+    });
+});
