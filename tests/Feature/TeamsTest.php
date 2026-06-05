@@ -39,3 +39,12 @@ it('un equipo puede agregar multiples usuarios a la vez', function(){
 
     expect($team->users)->count()->toBe(3);
 });
+
+// Prueba de regresión: detecta el falso positivo — el lote no puede exceder el tamaño máximo
+it('un equipo no puede exceder su tamaño maximo al agregar un lote de usuarios', function(){
+    $team = Team::factory()->create(['size' => 2]);
+    $users = User::factory(3)->create(); // 3 usuarios, pero el límite es 2
+
+    $this->expectException(Exception::class);
+    $team->add($users);
+});
