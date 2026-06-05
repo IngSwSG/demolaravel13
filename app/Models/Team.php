@@ -8,19 +8,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class Team extends Model
 {
-    /** @use HasFactory<\Database\Factories\TeamFactory> */
     use HasFactory;
+
+    protected $fillable = [
+        'name',
+        'size',
+    ];
 
     public function add($users)
     {
-
-        $this->guardAgainstTooManyMembers();
+        $this->guardAgainstTooManyMembers($users);
 
         if ($users instanceof User) {
             return $this->users()->save($users);
         }
 
-        $this->users()->saveMany($users);
+        return $this->users()->saveMany($users);
     }
 
     public function users()
@@ -28,10 +31,12 @@ class Team extends Model
         return $this->hasMany(User::class);
     }
 
-    protected function guardAgainstTooManyMembers()
+    protected function guardAgainstTooManyMembers($users)
     {
-        if ($this->users()->count() >= $this->size) {
-            throw new Exception();
+        $newUsersCount = $users instanceof User ? 1 : $users->count();
+
+        if ($this->users()->count() + $newUsersCount > $this->size) {
+            throw new Exception('El equipo no puede tener más miembros que su tamaño máximo.');
         }
     }
 }
