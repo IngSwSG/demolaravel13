@@ -8,13 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Team extends Model
 {
-    /** @use HasFactory<\Database\Factories\TeamFactory> */
     use HasFactory;
 
     public function add($users)
     {
+        $newCount = $users instanceof User ? 1 : count($users);
 
-        $this->guardAgainstTooManyMembers();
+        $this->guardAgainstTooManyMembers($newCount);
 
         if ($users instanceof User) {
             return $this->users()->save($users);
@@ -28,9 +28,9 @@ class Team extends Model
         return $this->hasMany(User::class);
     }
 
-    protected function guardAgainstTooManyMembers()
+    protected function guardAgainstTooManyMembers(int $adding = 1)
     {
-        if ($this->users()->count() >= $this->size) {
+        if ($this->users()->count() + $adding > $this->size) {
             throw new Exception();
         }
     }
