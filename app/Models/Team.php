@@ -13,12 +13,13 @@ class Team extends Model
 
     public function add($users)
     {
-
-        $this->guardAgainstTooManyMembers();
-
         if ($users instanceof User) {
+            $this->guardAgainstTooManyMembers();
+
             return $this->users()->save($users);
         }
+
+        $this->guardAgainstTooManyMembers($users->count());
 
         $this->users()->saveMany($users);
     }
@@ -28,9 +29,9 @@ class Team extends Model
         return $this->hasMany(User::class);
     }
 
-    protected function guardAgainstTooManyMembers()
+    protected function guardAgainstTooManyMembers($usersToAdd = 1)
     {
-        if ($this->users()->count() >= $this->size) {
+        if ($this->users()->count() + $usersToAdd > $this->size) {
             throw new Exception();
         }
     }
