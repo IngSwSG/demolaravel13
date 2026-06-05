@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Models;
 
 use Exception;
@@ -8,19 +9,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class Team extends Model
 {
-    /** @use HasFactory<\Database\Factories\TeamFactory> */
     use HasFactory;
+
+    protected $fillable = ['size'];
 
     public function add($users)
     {
+        $incomingCount = 1;
+        if ($users instanceof \Illuminate\Support\Collection || is_array($users)) {
+            $incomingCount = count($users);
+        }
 
-        $this->guardAgainstTooManyMembers();
+        $this->guardAgainstTooManyMembers($incomingCount);
 
         if ($users instanceof User) {
             return $this->users()->save($users);
         }
 
-        $this->users()->saveMany($users);
+        return $this->users()->saveMany($users);
     }
 
     public function users()
@@ -28,10 +34,12 @@ class Team extends Model
         return $this->hasMany(User::class);
     }
 
-    protected function guardAgainstTooManyMembers()
+    protected function guardAgainstTooManyMembers($incomingCount = 1)
     {
-        if ($this->users()->count() >= $this->size) {
-            throw new Exception();
+        $currentCount = $this->users()->count();
+
+        if (($currentCount + $incomingCount) > $this->size) {
+            throw new Exception("El equipo superará el tamaño máximo permitido.");
         }
     }
 }

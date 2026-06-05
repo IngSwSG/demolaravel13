@@ -24,11 +24,10 @@ it('un equipo puede tener un tamaño maximo', function(){
 
     expect($team->users)->count()->toBe(2);
 
-    $this->expectException(Exception::class);
+    // Usamos el método nativo de Pest para asegurar la excepción en la siguiente línea
     $user3 = User::factory()->create();
-    $team->add($user3);
-
-
+    
+    expect(fn () => $team->add($user3))->toThrow(Exception::class);
 });
 
 it('un equipo puede agregar multiples usuarios a la vez', function(){
@@ -38,4 +37,12 @@ it('un equipo puede agregar multiples usuarios a la vez', function(){
     $team->add($users);
 
     expect($team->users)->count()->toBe(3);
+});
+
+// NUESTRA PRUEBA DE REGRESIÓN (Expone el falso positivo del lote de usuarios)
+it('no se puede agregar una coleccion de usuarios que supere el tamaño maximo', function () {
+    $team = Team::factory()->create(['size' => 2]);
+    $users = User::factory(3)->create();
+
+    expect(fn () => $team->add($users))->toThrow(Exception::class);
 });
