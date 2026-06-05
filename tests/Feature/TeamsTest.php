@@ -3,39 +3,46 @@
 use App\Models\Team;
 use App\Models\User;
 
-it('un equipo puede agrear usuarios', function(){
+it('un equipo puede agregar usuarios', function () {
     $team = Team::factory()->create();
+
     $user1 = User::factory()->create();
     $user2 = User::factory()->create();
 
     $team->add($user1);
     $team->add($user2);
 
-    expect($team->users)->count()->toBe(2);
+    expect($team->fresh()->users)->toHaveCount(2);
 });
 
-it('un equipo puede tener un tamaño maximo', function(){
-    $team = Team::factory()->create(['size' => 2]);
-    $user1 = User::factory()->create();
-    $user2 = User::factory()->create();
-    
-    $team->add($user1);
-    $team->add($user2);
+it('un equipo puede tener un tamaño maximo', function () {
+    $team = Team::factory()->create([
+        'size' => 2,
+    ]);
 
-    expect($team->users)->count()->toBe(2);
+    $team->add(User::factory()->create());
+    $team->add(User::factory()->create());
 
-    $this->expectException(Exception::class);
+    expect($team->fresh()->users)->toHaveCount(2);
+
     $user3 = User::factory()->create();
-    $team->add($user3);
+
+    expect(
+        fn () => $team->add($user3)
+    )->toThrow(Exception::class);
 
 
+    expect($team->fresh()->users)->toHaveCount(2);
 });
 
-it('un equipo puede agregar multiples usuarios a la vez', function(){
-    $team = Team::factory()->create(['size' => 3]);
-    $users = User::factory(3)->create();
+it('un equipo puede agregar multiples usuarios a la vez', function () {
+    $team = Team::factory()->create([
+        'size' => 3,
+    ]);
+
+    $users = User::factory()->count(3)->create();
 
     $team->add($users);
 
-    expect($team->users)->count()->toBe(3);
+    expect($team->fresh()->users)->toHaveCount(3);
 });
