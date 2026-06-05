@@ -13,16 +13,23 @@ class Team extends Model
 
     public function add($users)
     {
-
         $this->guardAgainstTooManyMembers();
-
+ 
         if ($users instanceof User) {
-            return $this->users()->save($users);
+            $this->users()->save($users);
+            $this->unsetRelation('users'); // Refresca la relación cacheada
+            return;
         }
-
+ 
+        // Para colecciones, verifica que el total no supere el límite
+        if ($this->users()->count() + count($users) > $this->size) {
+            throw new Exception();
+        }
+ 
         $this->users()->saveMany($users);
+        $this->unsetRelation('users'); // Refresca la relación cacheada
     }
-
+    
     public function users()
     {
         return $this->hasMany(User::class);
