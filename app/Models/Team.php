@@ -23,6 +23,11 @@ class Team extends Model
         $this->users()->saveMany($users);
     }
 
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
+
     public function users()
     {
         return $this->hasMany(User::class);
