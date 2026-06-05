@@ -12,16 +12,19 @@ class Team extends Model
     use HasFactory;
 
     public function add($users)
-    {
-
-        $this->guardAgainstTooManyMembers();
-
-        if ($users instanceof User) {
-            return $this->users()->save($users);
+{
+    if ($users instanceof \Illuminate\Support\Collection || is_array($users)) {
+        foreach ($users as $user) {
+            $this->guardAgainstTooManyMembers();
+            $this->users()->save($user);
+            $this->load('users'); // refresca el conteo
         }
-
-        $this->users()->saveMany($users);
+        return;
     }
+
+    $this->guardAgainstTooManyMembers();
+    $this->users()->save($users);
+}
 
     public function users()
     {
