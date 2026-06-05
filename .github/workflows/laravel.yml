@@ -2,7 +2,7 @@ name: Laravel
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" , "Primer-Parte-C20501-C26655" ]
   pull_request:
     branches: [ "main" ]
 
